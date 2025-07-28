@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+  labels:
+    app: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack
+          image: localstack/localstack:2.3.2
+          ports:
+            - containerPort: 4566
+          env:
+            - name: SERVICES
+              value: "s3,sts,iam"
+            - name: DEBUG
+              value: "1"
+            - name: DATA_DIR
+              value: "/tmp/localstack/data"
+            - name: AWS_ACCESS_KEY_ID
+              value: "AWS_ACCESS_KEY_ID"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "AWS_SECRET_ACCESS_KEY"
+            - name: DEFAULT_REGION
+              value: "us-east-1"
+            - name: LOCALSTACK_HOST
+              value: "localstack"
+            - name: LOCALSTACK_API_KEY
+              value: "your_api_key_if_needed"
+          volumeMounts:
+            - name: localstack-data
+              mountPath: /var/lib/localstack
+            - name: localstack-files
+              mountPath: /etc/localstack/init/files
+              readOnly: true
+      volumes:
+        - name: localstack-data
+          emptyDir: {}
+        - name: localstack-files
+          configMap:
+            name: localstack-init-files 

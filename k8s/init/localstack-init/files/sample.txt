@@ -1,0 +1,3 @@
+Este é um arquivo de exemplo para o bucket S3 do LocalStack.
+Criado em: $(date)
+Versão: 1.0 

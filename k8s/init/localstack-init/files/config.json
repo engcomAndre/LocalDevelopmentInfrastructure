@@ -1,0 +1,16 @@
+{
+  "app_name": "raffle-management",
+  "version": "1.0.0",
+  "environment": "local",
+  "services": {
+    "mongodb": {
+      "host": "localhost",
+      "port": 27017,
+      "database": "raffles_db"
+    },
+    "localstack": {
+      "endpoint": "http://localhost:4566",
+      "region": "us-east-1"
+    }
+  }
+} 
