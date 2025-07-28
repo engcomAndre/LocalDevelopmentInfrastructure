@@ -1,0 +1,178 @@
+{
+    "realm": "ms-auth-core-service-realm",
+    "enabled": true,
+    "roles": {
+      "realm": [
+        { "name": "user:read", "description": "Usuário pode consultar seus dados" },
+        { "name": "user:write", "description": "Usuário pode atualizar seus dados" },
+        { "name": "user:raffle", "description": "Usuário pode interagir com rifas" },
+        { "name": "app:user:read", "description": "Aplicação pode consultar dados de usuários" },
+        { "name": "app:user:write", "description": "Aplicação pode cadastrar ou atualizar usuários" },
+        { "name": "app:raffle", "description": "Aplicação pode gerenciar rifas" },
+        { "name": "app:roles", "description": "Aplicação pode atribuir ou consultar roles" }
+      ]
+    },
+    "clientScopes": [
+      {
+        "name": "audience-ms-raffle-management-service",
+        "protocol": "openid-connect",
+        "protocolMappers": [
+          {
+            "name": "aud-ms-raffle-management-service",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-audience-mapper",
+            "consentRequired": false,
+            "config": {
+              "included.client.audience": "ms-raffle-management-service",
+              "id.token.claim": "true",
+              "access.token.claim": "true"
+            }
+          }
+        ]
+      }
+    ],
+    "clients": [
+      {
+        "clientId": "ms-auth-core-service",
+        "secret": "ms-auth-core-service-secret",
+        "enabled": true,
+        "protocol": "openid-connect",
+        "publicClient": false,
+        "serviceAccountsEnabled": true,
+        "standardFlowEnabled": true,
+        "directAccessGrantsEnabled": true,
+        "defaultClientScopes": [
+          "audience-ms-raffle-management-service"
+        ],
+        "protocolMappers": [
+          {
+            "name": "custom_roles",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-attribute-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.attribute": "roles",
+              "claim.name": "roles",
+              "jsonType.label": "String",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "userinfo.token.claim": "true",
+              "multivalued": "true"
+            }
+          },
+          {
+            "name": "application_user_id",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-attribute-mapper",
+            "consentRequired": false,
+            "config": {
+              "user.attribute": "application_user_id",
+              "claim.name": "application_user_id",
+              "jsonType.label": "String",
+              "id.token.claim": "true",
+              "access.token.claim": "true",
+              "userinfo.token.claim": "true"
+            }
+          }
+        ]
+      }
+    ],
+    "users": [
+      {
+        "username": "andre",
+        "enabled": true,
+        "emailVerified": true,
+        "email": "andre@testes.com.br",
+        "firstName": "André",
+        "lastName": "Vieira",
+        "credentials": [
+          {
+            "type": "password",
+            "value": "123456",
+            "temporary": false
+          }
+        ],
+        "requiredActions": [],
+        "attributes": {
+          "application_user_id": ["123e4567-e89b-12d3-a456-426614174000"],
+          "roles": ["ROLE_RAFFLE_USER"]
+        },
+        "realmRoles": [
+          "user:read",
+          "user:write",
+          "user:raffle"
+        ]
+      },
+      {
+        "username": "teste",
+        "enabled": true,
+        "emailVerified": true,
+        "email": "teste@testes.com.br",
+        "firstName": "TESTE",
+        "lastName": "TESTE",
+        "credentials": [
+          {
+            "type": "password",
+            "value": "123456",
+            "temporary": false
+          }
+        ],
+        "requiredActions": [],
+        "attributes": {
+          "application_user_id": ["teste123e4567-e89b-12d3-a456-426614174000"],
+          "roles": ["ROLE_RAFFLE_USER"]
+        },
+        "realmRoles": [
+          "user:read",
+          "user:write",
+          "user:raffle"
+        ]
+      },
+      {
+        "username": "common_user",
+        "enabled": true,
+        "emailVerified": true,
+        "email": "common_user@teste.com.br",
+        "firstName": "common",
+        "lastName": "user",
+        "credentials": [
+          {
+            "type": "password",
+            "value": "123456",
+            "temporary": false
+          }
+        ],
+        "requiredActions": [],
+        "attributes": {
+          "application_user_id": ["common123e4567-e89b-12d3-a456-426614174000"],
+          "roles": ["ROLE_RAFFLE_USER"]
+        },
+        "realmRoles": [
+          "user:read",
+          "user:write",
+          "user:raffle"
+        ]
+      },
+      {
+        "username": "service-account-ms-auth-core-service",
+        "enabled": true,
+        "serviceAccountClientId": "ms-auth-core-service",
+        "realmRoles": [
+          "app:user:read",
+          "app:user:write",
+          "app:raffle",
+          "app:roles"
+        ],
+        "clientRoles": {
+          "realm-management": [
+            "view-users",
+            "view-clients",
+            "view-realm",
+            "manage-realm",
+            "manage-users"
+          ]
+        }
+      }
+    ]
+  }
+  

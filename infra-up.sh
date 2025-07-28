@@ -10,4 +10,7 @@ echo "📦 Implantando MongoDB..."
 echo "☁️  Implantando LocalStack..."
 ./k8s/init/localstack-init/localstack-infra-up.sh
 
+echo "🔐 Implantando Keycloak..."
+./k8s/init/keycloak-init/keycloak-infra-up.sh
+
 echo "✅ Infraestrutura implantada com sucesso!"
