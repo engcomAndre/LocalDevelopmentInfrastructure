@@ -37,9 +37,39 @@ Este projeto fornece uma infraestrutura completa de desenvolvimento local usando
 
 ### Recursos do Sistema
 
-- **RAM**: Mínimo 8GB (recomendado 16GB)
-- **CPU**: Mínimo 4 cores
-- **Armazenamento**: Mínimo 20GB livre
+#### Requisitos Mínimos
+- **RAM**: 8GB
+- **CPU**: 4 cores
+- **Armazenamento**: 20GB livre
+
+#### Requisitos Recomendados
+- **RAM**: 16GB ou superior
+- **CPU**: 8 cores ou superior
+- **Armazenamento**: 50GB livre (SSD recomendado)
+
+#### Recursos Alocados por Componente
+
+| Componente | CPU Request | CPU Limit | Memória Request | Memória Limit | Armazenamento |
+|------------|-------------|-----------|-----------------|---------------|---------------|
+| **MongoDB** | 250m | 500m | 512Mi | 1Gi | 5Gi |
+| **LocalStack** | 250m | 500m | 512Mi | 1Gi | 2Gi |
+| **Keycloak** | 250m | 500m | 512Mi | 1Gi | 2Gi |
+| **SonarQube** | 1000m | 2000m | 2Gi | 4Gi | 10Gi |
+| **PostgreSQL** | 250m | 500m | 512Mi | 1Gi | 5Gi |
+| **Kafka** | 500m | 1000m | 1Gi | 2Gi | 5Gi |
+| **Kafka UI** | 250m | 500m | 512Mi | 1Gi | 1Gi |
+| **Minikube** | 1000m | 2000m | 2Gi | 4Gi | 20Gi |
+
+#### Total de Recursos Necessários
+- **CPU Total**: ~3.5 cores (requests) / ~7 cores (limits)
+- **Memória Total**: ~7.5Gi (requests) / ~15Gi (limits)
+- **Armazenamento Total**: ~50Gi
+
+#### Dicas de Performance
+- **SSD**: Recomendado para melhor performance do banco de dados
+- **RAM**: 16GB+ para evitar swap e melhor performance
+- **CPU**: 8+ cores para execução mais fluida
+- **Rede**: Conexão estável para download de imagens Docker
 
 ### Verificação de Pré-requisitos
 
@@ -69,11 +99,17 @@ cd LocalDevelopmentInfrastructure
 ### 2. Iniciar Minikube
 
 ```bash
-# Iniciar cluster Kubernetes
-minikube start --memory=8192 --cpus=4 --disk-size=20g
+# Iniciar cluster Kubernetes (configuração recomendada)
+minikube start --memory=16384 --cpus=8 --disk-size=50g --driver=docker
+
+# Ou configuração mínima (não recomendada para produção)
+# minikube start --memory=8192 --cpus=4 --disk-size=20g
 
 # Verificar status
 minikube status
+
+# Verificar recursos alocados
+minikube node list
 ```
 
 ### 3. Implantar Infraestrutura
@@ -400,6 +436,28 @@ kubectl exec -it deployment/sonarqube-postgres -- psql -U sonar -d sonar
 
 # Limpar banco se necessário
 kubectl exec -it deployment/sonarqube-postgres -- psql -U sonar -d sonar -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+# Verificar recursos disponíveis
+kubectl describe nodes
+kubectl top nodes
+```
+
+#### Problemas de Recursos (OOMKilled, FailedScheduling)
+```bash
+# Verificar eventos de recursos
+kubectl get events --sort-by='.lastTimestamp' | grep -E "(OOMKilled|FailedScheduling|Insufficient)"
+
+# Verificar uso de recursos
+kubectl top pods --sort-by=memory
+kubectl top pods --sort-by=cpu
+
+# Verificar recursos do Minikube
+minikube ssh "free -h"
+minikube ssh "df -h"
+
+# Aumentar recursos do Minikube (se necessário)
+minikube stop
+minikube start --memory=16384 --cpus=8 --disk-size=50g
 ```
 
 #### LocalStack Não Responde
@@ -455,6 +513,32 @@ kubectl top nodes
 
 # Status dos serviços
 kubectl get services
+
+# Verificar recursos alocados
+kubectl describe nodes
+
+# Monitorar uso de CPU e memória em tempo real
+watch -n 5 'kubectl top pods --sort-by=cpu'
+watch -n 5 'kubectl top pods --sort-by=memory'
+
+# Verificar uso de armazenamento
+kubectl get pvc
+kubectl get pv
+```
+
+### Monitoramento de Recursos
+
+```bash
+# Verificar uso de recursos do Minikube
+minikube ssh "df -h"
+minikube ssh "free -h"
+minikube ssh "top -n 1"
+
+# Verificar logs de recursos
+kubectl logs -n kube-system deployment/metrics-server
+
+# Verificar eventos relacionados a recursos
+kubectl get events --sort-by='.lastTimestamp' | grep -E "(OOMKilled|FailedScheduling|Insufficient)"
 ```
 
 ### Health Checks
