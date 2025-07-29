@@ -22,8 +22,8 @@ else
 fi
 
 # Remover recursos antigos do MongoDB
-echo "🔁 Removendo recursos antigos do MongoDB (forçado)..."
-kubectl delete pod -l app=mongo --ignore-not-found --force --grace-period=0
+echo "🔁 Removendo recursos antigos do MongoDB..."
+kubectl delete pod -l app=mongo --ignore-not-found
 kubectl delete pvc mongo-pvc --ignore-not-found
 kubectl delete configmap mongo-init-scripts --ignore-not-found
 

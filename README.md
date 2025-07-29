@@ -23,6 +23,8 @@ Este projeto fornece uma infraestrutura completa de desenvolvimento local usando
 - **LocalStack**: Simulação de serviços AWS localmente
 - **Keycloak**: Gerenciamento de identidade e acesso
 - **SonarQube Developer**: Análise de qualidade de código
+- **Kafka**: Message broker com KRaft
+- **Kafka UI**: Interface web para gerenciar o Kafka
 
 ## ⚙️ Pré-requisitos
 
@@ -153,6 +155,39 @@ aws --endpoint-url=http://localhost:4566 s3 ls
 - **CPU**: 1000m-2000m
 - **Java Options**: Otimizadas para performance
 
+### 📊 Kafka
+
+**Versão**: 3.7.0  
+**Porta**: 9092  
+**URL**: `localhost:9092`
+
+#### Configuração
+- **Modo**: KRaft (sem Zookeeper)
+- **Node ID**: 1
+- **Process Roles**: broker,controller
+- **Controller Quorum Voters**: 1@kafka:9093
+- **Listeners**: PLAINTEXT:9092, CONTROLLER:9093
+
+#### Recursos Alocados
+- **Memória**: 1Gi-2Gi
+- **CPU**: 500m-1000m
+
+### 🖥️ Kafka UI
+
+**Versão**: Latest  
+**Porta**: 8080  
+**URL**: `http://localhost:8080`
+
+#### Configuração
+- **Web Interface**: `http://localhost:8080`
+- **Cluster Name**: local-kafka
+- **Bootstrap Servers**: kafka:9092
+- **Security Protocol**: PLAINTEXT
+
+#### Recursos Alocados
+- **Memória**: 256Mi-512Mi
+- **CPU**: 250m-500m
+
 ## ⚙️ Configuração
 
 ### Variáveis de Ambiente
@@ -172,6 +207,8 @@ source k8s/config/local.env
 | LocalStack | 4566 | Serviços AWS |
 | Keycloak | 8888 | Autenticação |
 | SonarQube | 9000 | Análise de código |
+| Kafka | 9092 | Message broker |
+| Kafka UI | 8081 | Interface web Kafka |
 
 ### Volumes Persistentes
 
@@ -181,15 +218,42 @@ source k8s/config/local.env
 
 ## 🚀 Uso
 
+### Scripts Disponíveis
+
+#### `infra-up.sh` - Implantação Paralela
+- **Execução em paralelo** de todos os componentes
+- **Verificações de estado** automáticas
+- **Logs coloridos** e informativos
+- **Tratamento de erros** robusto
+- **Limpeza automática** de recursos temporários
+
+#### `infra-status.sh` - Verificação de Status
+- **Verificação completa** de deployments, pods e services
+- **Monitoramento de port-forwards** ativos
+- **Teste de conectividade** dos serviços
+- **Logs de erro** detalhados
+- **Dicas de troubleshooting** automáticas
+
+#### `port-forward-all.sh` - Gerenciamento de Port-Forwards
+- **Inicialização automática** de todos os port-forwards
+- **Detecção de conflitos** de porta
+- **Gerenciamento de processos** (start/stop/restart)
+- **Status em tempo real** dos port-forwards
+- **Limpeza automática** ao interromper
+
 ### Iniciar Todos os Serviços
 
 ```bash
+# Implantação em paralelo com verificações de estado
 ./infra-up.sh
 ```
 
-### Verificar Status
+### Verificar Status da Infraestrutura
 
 ```bash
+# Verificação completa do status
+./k8s/aux/infra-status.sh
+
 # Verificar pods
 kubectl get pods
 
@@ -198,6 +262,22 @@ kubectl get services
 
 # Verificar deployments
 kubectl get deployments
+```
+
+### Gerenciar Port-Forwards
+
+```bash
+# Iniciar todos os port-forwards
+./k8s/aux/port-forward-all.sh
+
+# Verificar status dos port-forwards
+./k8s/aux/port-forward-all.sh status
+
+# Parar todos os port-forwards
+./k8s/aux/port-forward-all.sh stop
+
+# Reiniciar todos os port-forwards
+./k8s/aux/port-forward-all.sh restart
 ```
 
 ### Acessar Serviços
@@ -214,10 +294,20 @@ open http://localhost:8888/admin
 
 # SonarQube
 open http://localhost:9000
+
+# Kafka UI
+open http://localhost:8081
 ```
 
-### Port Forwarding Manual
+### Port Forwarding
 
+#### Automático (Recomendado)
+```bash
+# Iniciar todos os port-forwards automaticamente
+./k8s/aux/port-forward-all.sh
+```
+
+#### Manual
 ```bash
 # MongoDB
 kubectl port-forward svc/mongo 27017:27017 &
@@ -230,6 +320,9 @@ kubectl port-forward svc/keycloak 8888:8080 &
 
 # SonarQube
 kubectl port-forward svc/sonarqube 9000:9000 &
+
+# Kafka UI
+kubectl port-forward svc/kafka-ui 8081:8081 &
 ```
 
 ## 🛠️ Desenvolvimento
@@ -238,8 +331,11 @@ kubectl port-forward svc/sonarqube 9000:9000 &
 
 ```
 INFRA/
-├── infra-up.sh                 # Script principal de implantação
+├── infra-up.sh                 # Script principal de implantação (paralelo)
 ├── k8s/
+│   ├── aux/                    # Scripts auxiliares
+│   │   ├── infra-status.sh     # Script de verificação de status
+│   │   └── port-forward-all.sh # Script de gerenciamento de port-forwards
 │   ├── config/
 │   │   ├── app-configmap.yaml  # Configurações da aplicação
 │   │   ├── app-secret.yaml     # Secrets
@@ -248,11 +344,14 @@ INFRA/
 │   │   ├── mongo-init/         # Configuração MongoDB
 │   │   ├── localstack-init/    # Configuração LocalStack
 │   │   ├── keycloak-init/      # Configuração Keycloak
-│   │   └── sonarqube-init/     # Configuração SonarQube
+│   │   ├── sonarqube-init/     # Configuração SonarQube
+│   │   ├── kafka-init/         # Configuração Kafka
+│   │   └── kafka-ui-init/      # Configuração Kafka UI
 │   ├── mongo/                  # Kubernetes manifests MongoDB
 │   ├── localstack/             # Kubernetes manifests LocalStack
 │   ├── keycloak/               # Kubernetes manifests Keycloak
-│   └── sonarqube/              # Kubernetes manifests SonarQube
+│   ├── sonarqube/              # Kubernetes manifests SonarQube
+│   └── kafka/                  # Kubernetes manifests Kafka + Kafka UI
 └── README.md                   # Este arquivo
 ```
 
