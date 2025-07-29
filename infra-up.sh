@@ -13,4 +13,7 @@ echo "☁️  Implantando LocalStack..."
 echo "🔐 Implantando Keycloak..."
 ./k8s/init/keycloak-init/keycloak-infra-up.sh
 
+echo "🔍 Implantando SonarQube..."
+./k8s/init/sonarqube-init/sonarqube-infra-up.sh
+
 echo "✅ Infraestrutura implantada com sucesso!"
