@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: sonarqube
-          image: sonarqube:10.5-community
+          image: sonarqube:developer
           ports:
             - containerPort: 9000
           env:
@@ -28,6 +28,19 @@ spec:
               value: "sonar"
             - name: SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
               value: "true"
+            - name: SONAR_WEB_JAVAOPTS
+              value: "-Xmx1g -Xms512m -XX:MaxDirectMemorySize=512m"
+            - name: SONAR_CE_JAVAOPTS
+              value: "-Xmx1g -Xms512m -XX:MaxDirectMemorySize=512m"
+            - name: SONAR_SEARCH_JAVAOPTS
+              value: "-Xmx1g -Xms1g -XX:MaxDirectMemorySize=512m"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
           volumeMounts:
             - name: sonarqube-data
               mountPath: /opt/sonarqube/data
