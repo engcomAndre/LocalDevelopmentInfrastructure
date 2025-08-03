@@ -26,6 +26,117 @@ error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+# Função para inicializar o Minikube
+start_minikube() {
+    log "🚀 Iniciando o Minikube..."
+    
+    # Configurações padrão para o Minikube
+    local driver="docker"
+    local memory="4g"
+    local cpus="2"
+    
+    # Detectar driver disponível
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        driver="docker"
+    elif command -v virtualbox &> /dev/null; then
+        driver="virtualbox"
+    else
+        warning "Nenhum driver preferencial encontrado. Usando driver padrão."
+        driver=""
+    fi
+    
+    echo "  📋 Driver: $driver"
+    echo "  📋 Memória: $memory"
+    echo "  📋 CPUs: $cpus"
+    echo ""
+    
+    # Iniciar o Minikube
+    local start_cmd="minikube start"
+    if [ -n "$driver" ]; then
+        start_cmd="$start_cmd --driver=$driver"
+    fi
+    start_cmd="$start_cmd --memory=$memory --cpus=$cpus"
+    
+    log "Executando: $start_cmd"
+    if $start_cmd; then
+        success "Minikube iniciado com sucesso!"
+        
+        # Aguardar um pouco para estabilizar
+        log "⏳ Aguardando cluster estabilizar..."
+        sleep 10
+        
+        return 0
+    else
+        error "Falha ao iniciar o Minikube!"
+        echo "  🔧 Tente manualmente: minikube start"
+        echo "  🔧 Verifique os logs: minikube logs"
+        return 1
+    fi
+}
+
+# Função para verificar se o Minikube está funcionando
+check_minikube() {
+    log "🔍 Verificando se o Minikube está disponível e funcionando..."
+    
+    # Verificar se o comando minikube existe
+    if ! command -v minikube &> /dev/null; then
+        error "Minikube não encontrado! Por favor, instale o Minikube primeiro."
+        echo "  📥 Para instalar: https://minikube.sigs.k8s.io/docs/start/"
+        return 1
+    fi
+    
+    # Verificar se o Minikube está rodando
+    if ! minikube status &> /dev/null; then
+        warning "Minikube não está rodando!"
+        log "🔄 Tentando inicializar o Minikube automaticamente..."
+        
+        if ! start_minikube; then
+            error "Falha ao inicializar o Minikube automaticamente!"
+            return 1
+        fi
+    fi
+    
+    # Verificar se o kubectl está configurado para o minikube
+    if ! kubectl cluster-info &> /dev/null; then
+        error "kubectl não consegue conectar ao cluster!"
+        echo "  🔧 Verifique se o kubectl está configurado corretamente"
+        echo "  🔧 Execute: kubectl config current-context"
+        return 1
+    fi
+    
+    # Verificar se os nodes estão prontos
+    local max_attempts=12
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if kubectl get nodes --no-headers | grep -q "Ready"; then
+            break
+        fi
+        
+        log "⏳ Aguardando nodes ficarem prontos... (tentativa $attempt/$max_attempts)"
+        sleep 10
+        ((attempt++))
+    done
+    
+    if ! kubectl get nodes --no-headers | grep -q "Ready"; then
+        error "Nenhum node está Ready no cluster após aguardar!"
+        echo "  🔧 Verifique o status dos nodes: kubectl get nodes"
+        return 1
+    fi
+    
+    success "Minikube está funcionando corretamente!"
+    
+    # Mostrar informações básicas do cluster
+    local context=$(kubectl config current-context)
+    local nodes=$(kubectl get nodes --no-headers | wc -l)
+    local ready_nodes=$(kubectl get nodes --no-headers | grep -c "Ready")
+    
+    echo "  📋 Contexto atual: $context"
+    echo "  📋 Nodes: $ready_nodes/$nodes prontos"
+    
+    return 0
+}
+
 # Função para executar um script de infraestrutura
 run_infra_script() {
     local script_path=$1
@@ -153,6 +264,16 @@ show_access_info() {
 # Função principal
 main() {
     log "🚀 Iniciando implantação da infraestrutura sequencialmente..."
+    
+    # Verificar se o Minikube está funcionando antes de prosseguir
+    if ! check_minikube; then
+        error "❌ Pré-requisitos não atendidos. Abortando implantação."
+        exit 1
+    fi
+    
+    echo ""
+    log "✅ Pré-requisitos verificados! Iniciando implantação dos componentes..."
+    echo ""
     
     # Executar todos os scripts sequencialmente
     run_infra_script "./k8s/init/mongo-init/mongo-infra-up.sh" "MongoDB"
